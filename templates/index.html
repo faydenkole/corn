@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static', filename='styles.css')}}">
+    <title>Corn</title>
+</head>
+<body>
+    <h2>Corn: Image Cropping</h2>
+    <form action="/crop" method="POST" enctype="multipart/form-data">
+        Upload: <input type="file" name="pic" id="imageInput" accept="image/*"><br>
+        Left: <input type="number" name="l" id="l" value="0">
+        Top: <input type="number" name="t" id="t" value="0"><br>
+        Right: <input type="number" name="r" id="r" value="0">
+        Bottom: <input type="number" name="b" id="b" value="0"><br>
+        <input type="submit" value="Crop">
+        <input type="reset" value="Clear">
+    </form>
+    <p>Preview:</p>
+    <div id="previewContainer" style="position: relative; width: 100%; margin-top: 20px;">
+        <img src="" alt="No image Selected" id="imagePreview" style="width: 100%; height: auto; display: none;">
+        <canvas id="selectionCanvas"; style="position: absolute; top: 0; left: 0; pointer-events:none"></canvas>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput')
+        const imagePreview = document.getElementById('imagePreview')
+        const canvas = document.getElementById('selectionCanvas')
+        const ctx = canvas.getContext('2d');
+        const inputs = 
+        {
+            l: document.getElementById('l'),
+            t: document.getElementById('t'),
+            r: document.getElementById('r'),
+            b: document.getElementById('b'),
+        };
+
+        function drawBox()
+        {
+            if (imagePreview.style.display === 'none') return;
+            // clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // get the neccessary things
+            const scale = imagePreview.clientWidth / imagePreview.naturalWidth;
+            let l = Math.max(0, Math.min(Number(inputs.l.value), imagePreview.naturalWidth));
+            let t = Math.max(0, Math.min(Number(inputs.t.value), imagePreview.naturalHeight));
+            let r = Math.max(0, Math.min(Number(inputs.r.value), imagePreview.naturalWidth));
+            let b = Math.max(0, Math.min(Number(inputs.b.value), imagePreview.naturalHeight));
+            const vL = l * scale;
+            const vT = t * scale;
+            const vR = r * scale;
+            const vB = b * scale;
+            // draw
+            ctx.strokeStyle = "red";
+            ctx.setLineDash([6, 4]);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(vL, vT, vR - vL, vB - vT);
+        };
+
+        imageInput.onchange = function()
+        {
+            const file = imageInput.files[0];
+
+            if (file)
+            {
+                const tempUrl = URL.createObjectURL(file);
+                imagePreview.src = tempUrl;
+                imagePreview.style.display = 'block';
+            }
+        };
+        function syncCanvas()
+        {
+            canvas.width = imagePreview.clientWidth;
+            canvas.height = imagePreview.clientHeight;
+            inputs.l.max = imagePreview.naturalWidth;
+            inputs.r.max = imagePreview.naturalWidth;
+            inputs.t.max = imagePreview.naturalHeight;
+            inputs.b.max = imagePreview.naturalHeight;
+            drawBox();
+        }
+        imagePreview.onload = syncCanvas;
+        window.onresize = syncCanvas;
+        Object.values(inputs).forEach(input => {
+            if(input)
+            {
+                input.addEventListener('input', drawBox);
+            }
+        });
+
+        function clearForm()
+        {
+            imagePreview.src = "";
+            imagePreview.style.display = "none";
+        }
+    </script>
+</body>
+</html>
